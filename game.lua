@@ -77,7 +77,7 @@ local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
 local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 
 -- Initialize variables
-local lives = 1
+local lives = 3
 local score = 0
 local powerlevel = 0
 local died = false
@@ -113,20 +113,14 @@ end
 
 local function createAsteroid()
 
-	local newAsteroid = display.newImageRect( mainGroup, objectSheet, 1, 102, 85 )
-	local megaAsteroid = display.newImageRect( mainGroup, objectSheet2, 1, 102, 85 )
-
-	table.insert( asteroidsTable, newAsteroid )
-	table.insert( asteroidsTable, megaAsteroid )
-
-	physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )
-	physics.addBody( megaAsteroid, "dynamic", { radius=50, bounce=0.9 } )
-	megaAsteroid.myName = "megaroid"
-	newAsteroid.myName = "asteroid"
-
 	local whatAsteriod = math.random ( 10 )
 	local whereFrom
 	if ((whatAsteriod % 5) ~= 0) then
+
+	local newAsteroid = display.newImageRect( mainGroup, objectSheet, 1, 102, 85 )
+	table.insert( asteroidsTable, newAsteroid )	
+	physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )	
+	newAsteroid.myName = "asteroid"
 
 	 	whereFrom = math.random( 3 )
 		if ( whereFrom == 1 ) then
@@ -145,7 +139,15 @@ local function createAsteroid()
 			newAsteroid.y = math.random( 500 )
 			newAsteroid:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
 		end
+
+		newAsteroid:applyTorque( math.random( -6,6 ) )
 	else
+
+		local megaAsteroid = display.newImageRect( mainGroup, objectSheet2, 1, 160, 125 )
+		table.insert( asteroidsTable, megaAsteroid )
+		physics.addBody( megaAsteroid, "dynamic", { radius=50, bounce=0.9 } )
+		megaAsteroid.myName = "megaroid"
+
 		whereFrom = math.random( 2 )
 		if ( whereFrom == 1 ) then
 			-- From the left
@@ -158,9 +160,9 @@ local function createAsteroid()
 			megaAsteroid.y = math.random( 500 )
 			megaAsteroid:setLinearVelocity( math.random( -100,-60 ), math.random( 20,60 ) )
 		end
-	end
-		newAsteroid:applyTorque( math.random( -6,6 ) )
+		
 		megaAsteroid:applyTorque( math.random( -6,20 ) )
+	end
 end
 
 
@@ -169,17 +171,12 @@ local function fireLaser()
  	-- Play fire sound!
     audio.play( fireSound )
 
-    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, 3, 100, 40 )
-	local newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
-	
-	physics.addBody( newLaser, "dynamic", { isSensor=true } )
-	physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
-
-
     if(powerlevel >= 10) then
 
-	newMegaLaser.isBullet = true
-	newMegaLaser.myName = "megalaser"
+	    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, 3, 100, 40 )
+		physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
+		newMegaLaser.isBullet = true
+		newMegaLaser.myName = "megalaser"
 
 		newMegaLaser.x = ship.x
 		newMegaLaser.y = ship.y
@@ -191,8 +188,10 @@ local function fireLaser()
 		powerlevel = powerlevel - 10
     else
 
-	newLaser.isBullet = true
-	newLaser.myName = "laser"
+		local newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
+		physics.addBody( newLaser, "dynamic", { isSensor=true } )
+		newLaser.isBullet = true
+		newLaser.myName = "laser"
 
 		newLaser.x = ship.x
 		newLaser.y = ship.y
