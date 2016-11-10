@@ -10,6 +10,10 @@ local nametext
 
 local function gotoGame()
 	composer.removeScene( "game" )
+	print(composer.getVariable( "playerName"))
+	if (tostring(composer.getVariable( "playerName")) == "nil") then
+		composer.setVariable( "playerName", "" )
+	end
     composer.gotoScene( "game", { effect = "crossFade", time = 800 } )
 end
 
@@ -111,7 +115,6 @@ function textListener ( event )
 	elseif (phase == "ended") then
 	    -- do something when textfield loses focus
 	    --print ( "thank you " .. " " .. event.target.text)
-		
 	    composer.setVariable( "playerName", event.target.text )
 
 	elseif (phase == "submitted") then

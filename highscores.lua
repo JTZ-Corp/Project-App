@@ -19,6 +19,7 @@ local CENTERY = display.contentCenterY
 local scoresTable = {} 	
 local base = system.DocumentsDirectory
 local path = system.pathForFile( "scores.json", base )
+local topScorerText
 
 local function loadScores() 
 	local file = io.open( path, "r" )
@@ -71,7 +72,7 @@ function scene:create( event )
 
 		-- Add our score to the end of the list
 		scoresTable[ #scoresTable + 1] = latestScore
-		
+		--scoresTable[ #scoresTable + 1] = { latestScore, name }
 		-- Now sort the table
 		local function compare( a, b )
 			return a > b
@@ -82,7 +83,6 @@ function scene:create( event )
 
 		-- go ahead and save the scores
 		saveScores()
-
 		composer.setVariable( "playerName", nil)
     end
 
@@ -92,11 +92,16 @@ function scene:create( event )
 
 	local highScoresText = display.newText(sceneGroup, "High Scores", CENTERX, 100, nil, 34)
 	highScoresText:setFillColor(1,1,1)
+
+	print (scoresTable)
 	for i = 1, 10 do
 		local tempY = 150 + (i * 50)
 		print("trying to print ", i, scoresTable[i])
 		if scoresTable[i] then
 			local tempScore = tostring( i ) .. "     ".. tostring( scoresTable[i] )
+			if (scoresTable[i] == latestScore) then
+				composer.setVariable( "top", name )
+			end
 			local score = display.newText(sceneGroup, tempScore, CENTERX-50, tempY, nil, 34 )
 			score.anchorX = 0
 			if i == 10 then
@@ -107,6 +112,12 @@ function scene:create( event )
 	end
 
 	local menuButton = display.newText( sceneGroup, "Menu", display.contentCenterX, 810, native.systemFont, 44 )
+	if (composer.getVariable( "top" ) ~= nil) then
+    	topScorerText = display.newText(sceneGroup, "Top Scorer! " .. tostring(composer.getVariable( "top" )),  display.contentCenterX, 900, nil, 40)
+	else
+		topScorerText = display.newText(sceneGroup, "Top Scorer! ",  display.contentCenterX, 900, nil, 40)
+	end
+	topScorerText:setFillColor(1,1,1)
 	menuButton:setFillColor( 0.75, 0.78, 1 )
 	menuButton:addEventListener( "tap", gotoMenu )
 

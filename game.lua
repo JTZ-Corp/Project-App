@@ -52,7 +52,7 @@ local sheetOptions =
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
 
 -- Initialize variables
-local lives = 3
+local lives = 1
 local score = 0
 local died = false
 
@@ -245,7 +245,7 @@ local function onCollision( event )
 
 				if ( lives == 0 ) then
 					display.remove( ship )
-					display.remoce( playNameText )
+					display.remove( playNameText )
 					timer.performWithDelay( 2000, endGame )
 				else
 					ship.alpha = 0
