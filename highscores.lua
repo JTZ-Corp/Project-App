@@ -60,8 +60,9 @@ function scene:create( event )
 
 	-- Get the saved score from the last run
 	local latestScore = composer.getVariable( "finalScore" )
+	local name = composer.getVariable( "playerName" )
     local fromsce = event.params.fromScene
-    print(fromsce)
+    --print(fromsce)
     
 		loadScores()
     -- Check from what scene is called
@@ -81,6 +82,8 @@ function scene:create( event )
 
 		-- go ahead and save the scores
 		saveScores()
+
+		composer.setVariable( "playerName", nil)
     end
 
 	local background = display.newImageRect( sceneGroup, "background.png", 800, 1400 )

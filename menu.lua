@@ -2,7 +2,7 @@
 local composer = require( "composer" )
 
 local scene = composer.newScene()
-
+local nametext
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -10,7 +10,7 @@ local scene = composer.newScene()
 
 local function gotoGame()
 	composer.removeScene( "game" )
-    composer.gotoScene( "game", { time=800, effect="crossFade" } )
+    composer.gotoScene( "game", { effect = "crossFade", time = 800 } )
 end
 
 local function gotoHighScores()
@@ -44,8 +44,12 @@ function scene:create( event )
 	local highScoresButton = display.newText( sceneGroup, "High Scores", display.contentCenterX, 810, native.systemFont, 44 )
 	highScoresButton:setFillColor( 0.75, 0.78, 1 )
 
+	--nametext:setFillColor( 0.75, 0.78, 1 )
+    
 	playButton:addEventListener( "tap", gotoGame )
 	highScoresButton:addEventListener( "tap", gotoHighScores )
+	background:addEventListener("tap", backgroundListener)
+
 end
 
 
@@ -58,9 +62,14 @@ function scene:show( event )
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
+
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-
+		nametext = native.newTextField(display.contentCenterX, display.contentCenterY + 100, 300, 50)
+		--nametext:setColor( 0.82, 0.86, 1 )
+		nametext.placeholder = "Enter Name"
+		sceneGroup:insert(nametext)
+		nametext:addEventListener("userInput", textListener)
 	end
 end
 
@@ -73,6 +82,8 @@ function scene:hide( event )
 
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
+		nametext:removeSelf()
+		nametext = nil
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
@@ -89,9 +100,40 @@ function scene:destroy( event )
 
 end
 
+--Text field event listener
+function textListener ( event )
+	local phase = event.phase
+
+	if (phase == "began") then
+		-- clear text field
+		event.target.text = ''
+		--print ("waiting")
+	elseif (phase == "ended") then
+	    -- do something when textfield loses focus
+	    --print ( "thank you " .. " " .. event.target.text)
+		
+	    composer.setVariable( "playerName", event.target.text )
+
+	elseif (phase == "submitted") then
+	    -- do something with the text
+	    --print ( "Hello " .. event.target.text)
+	    composer.setVariable( "playerName", event.target.text )
+
+	elseif (phase == "editing") then
+    	-- do something while editing
+    	--print ( event.startPosition )
+
+    end
+end
+
+function backgroundListener ( event )
+	native.setKeyboardFocus( nil )
+end
+
+
 
 -- -----------------------------------------------------------------------------------
--- Scene event function listeners
+-- Event function listeners
 -- -----------------------------------------------------------------------------------
 scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
