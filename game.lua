@@ -95,6 +95,8 @@ local backGroup
 local mainGroup
 local uiGroup
 
+local volume
+local volumeLow
 local mute = false
 
 -- Sound effects
@@ -414,11 +416,17 @@ function scene:create( event )
 	fireSound = audio.loadSound( "audio/fire.wav" )
 
 	--create volume
-	local volume = display.newImageRect(backGroup, "volume-max.png", 70,70)
+	volume = display.newImageRect(backGroup, "volume-max.png", 70,70)
 	volume.x = display.contentCenterX + 230
 	volume.y = display.contentCenterY - 430
+
+	volumeLow = display.newImageRect(backGroup, "volume-low.png", 70,70)
+	volumeLow.x = display.contentCenterX + 219
+	volumeLow.y = display.contentCenterY - 430
+	volumeLow.isVisible = false
  	
  	volume:addEventListener("tap", changeMute)
+ 	volumeLow:addEventListener("tap", changeMute)
 end
 
 --volumer function
@@ -430,11 +438,15 @@ end
 
 function mutePlay()
 	if (mute) then
+		volumeLow.isVisible = true
+		volume.isVisible = false
 		audio.pause( musicTrack )
 		audio.pause( explosionSound )
 		audio.pause( fireSound )
 
 	else
+		volumeLow.isVisible = false
+		volume.isVisible = true
 		audio.play( musicTrack )
 		audio.play( explosionSound )
 		audio.play( fireSound )
