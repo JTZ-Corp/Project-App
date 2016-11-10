@@ -245,7 +245,7 @@ local function onCollision( event )
 
 				if ( lives == 0 ) then
 					display.remove( ship )
-					display.remoce( playNameText )
+					display.remove( playNameText )
 					timer.performWithDelay( 2000, endGame )
 				else
 					ship.alpha = 0
