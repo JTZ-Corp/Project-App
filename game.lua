@@ -49,11 +49,37 @@ local sheetOptions =
         },
     }
 }
+local sheetOptions2 =
+{
+    frames =
+    {
+        {   -- 1) mega asteroid 1
+            x = 0,
+            y = 69,
+            width = 109,
+            height = 90
+        },
+        {   -- 2) mega asteroid 2
+            x = 0,
+            y = 166,
+            width = 104,
+            height = 100
+        },
+        {   -- 3) mega laser
+			x = 11,
+            y = 8,
+            width = 56,
+            height = 46
+        },
+    }
+}
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
+local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 
 -- Initialize variables
 local lives = 1
 local score = 0
+local powerlevel = 0
 local died = false
 
 local asteroidsTable = {}
@@ -63,6 +89,7 @@ local gameLoopTimer
 local livesText
 local scoreText
 local playNameText
+local powerText
 
 local backGroup
 local mainGroup
@@ -80,36 +107,58 @@ local musicTrack
 local function updateText()
 	livesText.text = "Lives: " .. lives
 	scoreText.text = "Score: " .. score
+	powerText.text = "Power: " .. powerlevel
 end
 
 
 local function createAsteroid()
 
 	local newAsteroid = display.newImageRect( mainGroup, objectSheet, 1, 102, 85 )
+	local megaAsteroid = display.newImageRect( mainGroup, objectSheet2, 1, 102, 85 )
+
 	table.insert( asteroidsTable, newAsteroid )
+	table.insert( asteroidsTable, megaAsteroid )
+
 	physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )
+	physics.addBody( megaAsteroid, "dynamic", { radius=50, bounce=0.9 } )
+	megaAsteroid.myName = "megaroid"
 	newAsteroid.myName = "asteroid"
 
 	local whereFrom = math.random( 3 )
+	local whatAsteriod = math.random ( 10 )
 
-	if ( whereFrom == 1 ) then
-		-- From the left
-		newAsteroid.x = -60
-		newAsteroid.y = math.random( 500 )
-		newAsteroid:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
-	elseif ( whereFrom == 2 ) then
-		-- From the top
-		newAsteroid.x = math.random( display.contentWidth )
-		newAsteroid.y = -60
-		newAsteroid:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
-	elseif ( whereFrom == 3 ) then
-		-- From the right
-		newAsteroid.x = display.contentWidth + 60
-		newAsteroid.y = math.random( 500 )
-		newAsteroid:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+	if ((whatAsteriod % 5) ~= 0) then
+		if ( whereFrom == 1 ) then
+			-- From the left
+			newAsteroid.x = -60
+			newAsteroid.y = math.random( 500 )
+			newAsteroid:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
+		elseif ( whereFrom == 2 ) then
+			-- From the top
+			newAsteroid.x = math.random( display.contentWidth )
+			newAsteroid.y = -60
+			newAsteroid:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
+		elseif ( whereFrom == 3 ) then
+			-- From the right
+			newAsteroid.x = display.contentWidth + 60
+			newAsteroid.y = math.random( 500 )
+			newAsteroid:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+		end
+	else
+		if ( whereFrom == 1 ) then
+			-- From the left
+			megaAsteroid.x = math.random( display.contentWidth )
+			megaAsteroid.y = -60
+			megaAsteroid:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
+		elseif ( whereFrom == 2 ) then
+			-- From the right
+			megaAsteroid.x = display.contentWidth + 60
+			megaAsteroid.y = math.random( 500 )
+			megaAsteroid:setLinearVelocity( math.random( -100,-60 ), math.random( 20,60 ) )
+		end
 	end
-
-	newAsteroid:applyTorque( math.random( -6,6 ) )
+		newAsteroid:applyTorque( math.random( -6,6 ) )
+		megaAsteroid:applyTorque( math.random( -6,20 ) )
 end
 
 
@@ -118,18 +167,39 @@ local function fireLaser()
  	-- Play fire sound!
     audio.play( fireSound )
 
+    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, 3, 100, 40 )
 	local newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
+	
 	physics.addBody( newLaser, "dynamic", { isSensor=true } )
+	physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
+
+
+    if(powerlevel >= 10) then
+
+	newMegaLaser.isBullet = true
+	newMegaLaser.myName = "megalaser"
+
+		newMegaLaser.x = ship.x
+		newMegaLaser.y = ship.y
+		newMegaLaser:toBack()
+
+		transition.to( newMegaLaser, { y=-40, time=700,
+			onComplete = function() display.remove( newMegaLaser ) end
+		} )
+		powerlevel = powerlevel - 10
+    else
+
 	newLaser.isBullet = true
 	newLaser.myName = "laser"
 
-	newLaser.x = ship.x
-	newLaser.y = ship.y
-	newLaser:toBack()
+		newLaser.x = ship.x
+		newLaser.y = ship.y
+		newLaser:toBack()
 
-	transition.to( newLaser, { y=-40, time=500,
-		onComplete = function() display.remove( newLaser ) end
-	} )
+		transition.to( newLaser, { y=-40, time=500,
+			onComplete = function() display.remove( newLaser ) end
+		} )
+	end
 end
 
 
@@ -214,12 +284,36 @@ local function onCollision( event )
 		local obj2 = event.object2
 
 		if ( ( obj1.myName == "laser" and obj2.myName == "asteroid" ) or
-			 ( obj1.myName == "asteroid" and obj2.myName == "laser" ) )
-		then
-			-- Remove both the laser and asteroid
-			display.remove( obj1 )
-            display.remove( obj2 )
+			 ( obj1.myName == "asteroid" and obj2.myName == "laser" ) or 
+			 ( obj1.myName == "megaroid" and obj2.myName == "laser" ) or
+			 ( obj1.myName == "laser" and obj2.myName == "megaroid" ) or 
 
+			 ( obj1.myName == "megalaser" and obj2.myName == "asteroid" ) or
+			 ( obj1.myName == "asteroid" and obj2.myName == "megalaser" ) or 
+			 ( obj1.myName == "megaroid" and obj2.myName == "megalaser" ) or
+			 ( obj1.myName == "megalaser" and obj2.myName == "megaroid" ))
+		then
+			-- Check if asteriod is a megaroid
+
+			local isMegaRoid
+			if( (obj1.myName == "laser" and obj2.myName == "megaroid") or 
+				(obj1.myName == "megaroid" and obj2.myName == "laser") or
+				(obj1.myName == "megalaser" and obj2.myName == "megaroid") or 
+				(obj1.myName == "megaroid" and obj2.myName == "megalaser"))
+			then
+				isMegaRoid = true
+			else
+				isMegaRoid = false
+			end
+			-- Remove both the laser and asteroid
+			if(obj1.myName == "megalaser") then
+				display.remove( obj2 )
+			elseif(obj2.myName == "megalaser") then
+            	display.remove( obj1 )
+            else
+				display.remove( obj1 )
+            	display.remove( obj2 )
+            end
 			-- Play explosion sound!
             audio.play( explosionSound )
 
@@ -231,11 +325,20 @@ local function onCollision( event )
 			end
 
 			-- Increase score
-			score = score + 100
+			if (isMegaRoid == true) then
+				score = score + 150
+				powerlevel = powerlevel + 2
+			else
+				score = score + 100
+				powerlevel = powerlevel + 1
+			end
 			scoreText.text = "Score: " .. score
+			powerText.text = "Power: " .. powerlevel
 
 		elseif ( ( obj1.myName == "ship" and obj2.myName == "asteroid" ) or
-				 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) )
+				 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) or 
+			 	( obj1.myName == "megaroid" and obj2.myName == "ship" ) or
+			 	( obj1.myName == "ship" and obj2.myName == "megaroid" ))
 		then
 			if ( died == false ) then
 				died = true
@@ -301,6 +404,7 @@ function scene:create( event )
 	-- Display lives and score
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 80, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 80, native.systemFont, 36 )
+	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 40, native.systemFont, 26 )
 
 	ship:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
