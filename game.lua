@@ -214,11 +214,14 @@ local function dragShip( event )
 		display.currentStage:setFocus( ship )
 		-- Store initial offset position
 		ship.touchOffsetX = event.x - ship.x
+		ship.touchOffsetY = event.y - ship.y
 
 	elseif ( "moved" == phase ) then
 		-- Move the ship to the new touch position
 		ship.x = event.x - ship.touchOffsetX
 		playNameText.x = event.x - ship.touchOffsetX
+		ship.y = event.y - ship.touchOffsetY
+		playNameText.y = event.y - ship.touchOffsetY
 
 	elseif ( "ended" == phase or "cancelled" == phase ) then
 		-- Release touch focus on the ship
@@ -407,7 +410,7 @@ function scene:create( event )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 80, native.systemFont, 36 )
 	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 40, native.systemFont, 26 )
 
-	ship:addEventListener( "tap", fireLaser )
+	background:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
 
  	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
