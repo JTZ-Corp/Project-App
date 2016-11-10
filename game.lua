@@ -68,6 +68,8 @@ local backGroup
 local mainGroup
 local uiGroup
 
+local mute = false
+
 -- Sound effects
 local explosionSound
 local fireSound
@@ -301,12 +303,38 @@ function scene:create( event )
 	ship:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
 
- 	musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
+ 	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
 	explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
+
+	--create volume
+	local volume = display.newImageRect(backGroup, "volume-max.png", 70,70)
+	volume.x = display.contentCenterX + 230
+	volume.y = display.contentCenterY - 430
  	
+ 	volume:addEventListener("tap", changeMute)
 end
 
+--volumer function
+function changeMute()
+	mute = not mute
+	print(mute)
+	mutePlay()
+end
+
+function mutePlay()
+	if (mute) then
+		audio.pause( musicTrack )
+		audio.pause( explosionSound )
+		audio.pause( fireSound )
+
+	else
+		audio.play( musicTrack )
+		audio.play( explosionSound )
+		audio.play( fireSound )
+	end
+
+end
 
 -- show()
 function scene:show( event )
