@@ -34,7 +34,7 @@ function scene:create( event )
 	background.x = display.contentCenterX
 	background.y = display.contentCenterY
 
-	local title = display.newImageRect( sceneGroup, "title2.png", 550, 100 )
+	local title = display.newImageRect( sceneGroup, "title.png", 550, 100 )
 	title.x = display.contentCenterX
 	title.y = 300
 
