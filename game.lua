@@ -122,10 +122,11 @@ local function createAsteroid()
 	megaAsteroid.myName = "megaroid"
 	newAsteroid.myName = "asteroid"
 
-	local whereFrom = math.random( 3 )
 	local whatAsteriod = math.random ( 10 )
-
+	local whereFrom
 	if ((whatAsteriod % 5) ~= 0) then
+
+	 	whereFrom = math.random( 3 )
 		if ( whereFrom == 1 ) then
 			-- From the left
 			newAsteroid.x = -60
@@ -143,6 +144,7 @@ local function createAsteroid()
 			newAsteroid:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
 		end
 	else
+		whereFrom = math.random( 2 )
 		if ( whereFrom == 1 ) then
 			-- From the left
 			megaAsteroid.x = math.random( display.contentWidth )
