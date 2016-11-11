@@ -71,6 +71,12 @@ local sheetOptions2 =
             width = 56,
             height = 46
         },
+        {   -- 4) power up
+			x = 88,
+            y = 4,
+            width = 24,
+            height = 36
+        },
     }
 }
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
@@ -80,12 +86,16 @@ local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 local lives = 3
 local score = 0
 local powerlevel = 0
+local powerCount = 0
 local died = false
 
 local asteroidsTable = {}
+local powerTable = {}
 
 local ship
 local gameLoopTimer
+local gameLoop2Timer
+local fireLoopTimer
 local livesText
 local scoreText
 local playNameText
@@ -173,6 +183,35 @@ local function createAsteroid()
 	end
 end
 
+local function createPower()
+
+	local whereFrom = math.random( 3 )
+	local newPower = display.newImageRect( mainGroup, objectSheet2, 4, 40, 40 )
+	table.insert( powerTable, newPower )	
+	physics.addBody( newPower, "dynamic", { radius=10, bounce=0.8 } )	
+	newPower.myName = "power"
+
+
+	if ( whereFrom == 1 ) then
+		-- From the left
+		newPower.x = -60
+		newPower.y = math.random( 500 )
+		newPower:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
+	elseif ( whereFrom == 2 ) then
+		-- From the top
+		newPower.x = math.random( display.contentWidth )
+		newPower.y = -60
+		newPower:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
+	elseif ( whereFrom == 3 ) then
+		-- From the right
+		newPower.x = display.contentWidth + 60
+		newPower.y = math.random( 500 )
+		newPower:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+	end
+
+	--newPower:applyTorque( math.random( -6,6 ) )
+end
+
 
 local function fireLaser()
 
@@ -227,9 +266,9 @@ local function dragShip( event )
 	elseif ( "moved" == phase ) then
 		-- Move the ship to the new touch position
 		ship.x = event.x - ship.touchOffsetX
-		playNameText.x = event.x - ship.touchOffsetX
+		playNameText.x = event.x - ship.touchOffsetX 
 		ship.y = event.y - ship.touchOffsetY
-		playNameText.y = event.y - ship.touchOffsetY
+		playNameText.y = event.y - ship.touchOffsetY - 50
 
 	elseif ( "ended" == phase or "cancelled" == phase ) then
 		-- Release touch focus on the ship
@@ -239,12 +278,28 @@ local function dragShip( event )
 	return true  -- Prevents touch propagation to underlying objects
 end
 
+local function gameLoop2()
+
+    createPower()
+
+	for i = #powerTable, 1, -1 do
+		local thisPower = powerTable[i]
+
+		if ( thisPower.x < -100 or
+			 thisPower.x > display.contentWidth + 100 or
+			 thisPower.y < -100 or
+			 thisPower.y > display.contentHeight + 100 )
+		then
+			display.remove( thisPower )
+			table.remove( powerTable, i )
+		end
+	end
+end
 
 local function gameLoop()
 
 	-- Create new asteroid
 	createAsteroid()
-    
 	-- Remove asteroids which have drifted off screen
 	for i = #asteroidsTable, 1, -1 do
 		local thisAsteroid = asteroidsTable[i]
@@ -371,6 +426,26 @@ local function onCollision( event )
 					timer.performWithDelay( 1000, restoreShip )
 				end
 			end
+		elseif ( ( obj1.myName == "ship" and obj2.myName == "power" ) or
+				 ( obj1.myName == "power" and obj2.myName == "ship" ))
+		then
+			if(obj1.myName == "power") then
+				display.remove( obj1 )
+			elseif(obj2.myName == "power") then
+            	display.remove( obj2 )
+            end
+
+            for i = #powerTable, 1, -1 do
+				if ( powerTable[i] == obj1 or powerTable[i] == obj2 ) then
+					table.remove( powerTable, i )
+					break
+				end
+			end
+
+			powerCount = powerCount + 100
+			fireRate()
+
+			print(powerCount)
 		end
 	end
 end
@@ -480,9 +555,20 @@ Runtime:addEventListener( "enterFrame", move )
 
 
 -- Fire rate
-local function fireRate()
-	fireLaser()
-	-- body
+function fireRate()
+
+	if fireLoopTimer then
+		timer.cancel(fireLoopTimer)
+		fireLoopTimer = nil
+	end
+
+	if(powerCount == 0) then
+		fireLoopTimer = timer.performWithDelay( 1000, fireLaser, 0)
+	elseif(powerCount > 0 and powerCount < 1000) then
+		fireLoopTimer = timer.performWithDelay( 1000 - powerCount, fireLaser, 0)
+	else
+		fireLoopTimer = timer.performWithDelay( 100, fireLaser, 0)
+	end
 end
 --volumer function
 function changeMute()
@@ -505,7 +591,6 @@ function mutePlay()
 
 end
 
-local fireLoopTimer
 -- show()
 function scene:show( event )
 
@@ -520,7 +605,8 @@ function scene:show( event )
 		physics.start()
 		Runtime:addEventListener( "collision", onCollision )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
-		fireLoopTimer = timer.performWithDelay( 1000, fireLaser, 0)
+		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop, 1 )
+		fireRate()
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
 
