@@ -96,6 +96,7 @@ local powerCount = 500
 local died = false
 local bigAstroid = false
 local hitCount = 0;
+local minuteCount = 1
 
 local asteroidsTable = {}
 local powerTable = {}
@@ -209,7 +210,7 @@ local function createBigAsteroid()
 	newBig.myName = "big"
 
 	-- From the top
-	newBig.x = display.contentCenterX
+	newBig.x = display.contentCenterX + 10
 	newBig.y = -120
 	newBig:setLinearVelocity( 0, 40)
 	newBig:applyTorque( math.random( -4,4 ) )
@@ -353,6 +354,16 @@ local function gameLoop()
 	else
 		if #bigAstroidTable == 0 then
 			createBigAsteroid()
+		else
+			for i = #bigAstroidTable, 1, -1 do
+				local thisAsteroid = bigAstroidTable[i]
+				if (thisAsteroid.y > display.contentHeight - (thisAsteroid.height/2) )
+				then
+					display.remove( ship )
+					display.remove( playNameText )
+					endGame()
+				end
+			end
 		end
 	end
 end
@@ -379,7 +390,15 @@ local function restoreShip()
 end
 
 
-local function endGame()
+function endGame()
+	if fireLoopTimer then
+		timer.cancel(fireLoopTimer)
+		fireLoopTimer = nil
+	end
+	if gameClockTimer then
+		timer.cancel(gameClockTimer)
+		gameClockTimer = nil
+	end
 	composer.setVariable( "finalScore", score )
 	composer.removeScene( "highscores" )
 	local options = { effect = "crossFade", time = 800, params = { fromScene = "game"} }
@@ -451,6 +470,8 @@ local function onCollision( event )
 		        else
 		        	display.remove( obj1 )
 	            	display.remove( obj2 )
+	            	bigAstroid = false
+	            	minuteCount = minuteCount + 1
 	            end
             end
 			-- Play explosion sound!
@@ -472,8 +493,8 @@ local function onCollision( event )
 				powerlevel = powerlevel + 1
 			end
 			scoreText.text = "Score: " .. score
-			powerText.text = "Power: " .. powerlevel
-			hitText.text = "Hits: " .. hitCount
+			--powerText.text = "Power: " .. powerlevel
+			--hitText.text = "Hits: " .. hitCount
 
 		elseif ( ( obj1.myName == "ship" and obj2.myName == "asteroid" ) or
 				 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) or 
@@ -492,7 +513,7 @@ local function onCollision( event )
 				lives = lives - 1
 				powerlevel = 0
 				livesText.text = "Lives: " .. lives
-				powerText.text = "Power: " .. powerlevel
+				--powerText.text = "Power: " .. powerlevel
 				if powerCount > 200 then
 					powerCount = powerCount - 200
 				end
@@ -599,8 +620,8 @@ function scene:create( event )
 
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
-	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
-	hitText = display.newText( uiGroup, "Hits: " .. hitCount, 400, 80, native.systemFont, 26 )
+	--powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
+	--hitText = display.newText( uiGroup, "Hits: " .. hitCount, 400, 80, native.systemFont, 26 )
 
 	--background:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
@@ -626,8 +647,8 @@ end
 function updateTime()
 	gameTime = os.date( '*t' )
 	--print(startTime.sec - gameTime.sec)
-	print(gameTime.min .. ":" .. gameTime.sec)
-	if(gameTime.min == startTime.min + 1 and gameTime.sec == startTime.sec) then
+	--print(gameTime.min .. ":" .. gameTime.sec)
+	if(gameTime.min == startTime.min + minuteCount and gameTime.sec == startTime.sec) then
 		print("boss has arrived")
 		bigAstroid = true
 	end
@@ -729,7 +750,6 @@ function scene:hide( event )
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )
 		timer.cancel( gameLoop2Timer )
-		--timer.cancel( fireLoopTimer )
 		--timer.cancel( gameClockTimer )
 
 	elseif ( phase == "did" ) then
