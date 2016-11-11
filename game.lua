@@ -262,6 +262,7 @@ local function dragShip( event )
 		-- Store initial offset position
 		ship.touchOffsetX = event.x - ship.x
 		ship.touchOffsetY = event.y - ship.y
+		--print(ship.touchOffsetX .. ship.touchOffsetY  )
 
 	elseif ( "moved" == phase ) then
 		-- Move the ship to the new touch position
@@ -269,6 +270,8 @@ local function dragShip( event )
 		playNameText.x = event.x - ship.touchOffsetX 
 		ship.y = event.y - ship.touchOffsetY
 		playNameText.y = event.y - ship.touchOffsetY + 50
+
+		--print(ship.x .. ship.y  )
 
 	elseif ( "ended" == phase or "cancelled" == phase ) then
 		-- Release touch focus on the ship
@@ -330,8 +333,10 @@ local function restoreShip()
 			ship.isBodyActive = true
 			died = false
             playNameText.alpha = ship.alpha
+            fireLaser()
 		end
 	} )
+
 end
 
 
@@ -411,18 +416,29 @@ local function onCollision( event )
 
 				 -- Play explosion sound!
                 audio.play( explosionSound )
-
+                
 				-- Update lives
 				lives = lives - 1
+				powerlevel = 0
 				livesText.text = "Lives: " .. lives
+				powerText.text = "Power: " .. powerlevel
+				
+
+				if fireLoopTimer then
+					timer.cancel(fireLoopTimer)
+					fireLoopTimer = nil
+				end
+
 
 				if ( lives == 0 ) then
 					display.remove( ship )
 					display.remove( playNameText )
+
 					timer.performWithDelay( 2000, endGame )
 				else
 					ship.alpha = 0
 					playNameText.alpha = 0
+					powerCount = 0
 					timer.performWithDelay( 1000, restoreShip )
 				end
 			end
@@ -550,13 +566,8 @@ local function move(event)
  end
 end
  
--- Create a runtime event to move backgrounds
-Runtime:addEventListener( "enterFrame", move )
-
-
 -- Fire rate
 function fireRate()
-
 	if fireLoopTimer then
 		timer.cancel(fireLoopTimer)
 		fireLoopTimer = nil
@@ -653,6 +664,10 @@ scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
+-- -----------------------------------------------------------------------------------
+
+-- Create a runtime event to move backgrounds
+Runtime:addEventListener( "enterFrame", move )
 -- -----------------------------------------------------------------------------------
 
 return scene
