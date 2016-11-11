@@ -96,10 +96,13 @@ local ship
 local gameLoopTimer
 local gameLoop2Timer
 local fireLoopTimer
+local gameClockTimer
 local livesText
 local scoreText
 local playNameText
 local powerText
+local gameTime
+local startTime
 
 local backGroup
 local mainGroup
@@ -262,6 +265,7 @@ local function dragShip( event )
 		-- Store initial offset position
 		ship.touchOffsetX = event.x - ship.x
 		ship.touchOffsetY = event.y - ship.y
+		--print(ship.touchOffsetX .. ship.touchOffsetY  )
 
 	elseif ( "moved" == phase ) then
 		-- Move the ship to the new touch position
@@ -269,6 +273,8 @@ local function dragShip( event )
 		playNameText.x = event.x - ship.touchOffsetX 
 		ship.y = event.y - ship.touchOffsetY
 		playNameText.y = event.y - ship.touchOffsetY + 50
+
+		--print(ship.x .. ship.y  )
 
 	elseif ( "ended" == phase or "cancelled" == phase ) then
 		-- Release touch focus on the ship
@@ -330,8 +336,10 @@ local function restoreShip()
 			ship.isBodyActive = true
 			died = false
             playNameText.alpha = ship.alpha
+            fireRate()
 		end
 	} )
+
 end
 
 
@@ -411,18 +419,29 @@ local function onCollision( event )
 
 				 -- Play explosion sound!
                 audio.play( explosionSound )
-
+                
 				-- Update lives
 				lives = lives - 1
+				powerlevel = 0
 				livesText.text = "Lives: " .. lives
+				powerText.text = "Power: " .. powerlevel
+				
+
+				if fireLoopTimer then
+					timer.cancel(fireLoopTimer)
+					fireLoopTimer = nil
+				end
+
 
 				if ( lives == 0 ) then
 					display.remove( ship )
 					display.remove( playNameText )
+
 					timer.performWithDelay( 2000, endGame )
 				else
 					ship.alpha = 0
 					playNameText.alpha = 0
+					powerCount = 0
 					timer.performWithDelay( 1000, restoreShip )
 				end
 			end
@@ -506,6 +525,8 @@ function scene:create( event )
     --playNameText.myName = "name"
 
 	-- Display lives and score
+	--startTimeText = display.newText( uiGroup, "", 400, 80, native.systemFont, 36 )
+
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
 	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
@@ -531,6 +552,15 @@ function scene:create( event )
  	volumeLow:addEventListener("tap", changeMute)
 end
  
+function updateTime()
+	gameTime = os.date( '*t' )
+	--print(startTime.sec - gameTime.sec)
+	if(gameTime.sec == startTime.sec + 30) then
+		print("30 sec has passed")
+	end
+	-- body
+end
+
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
 	bg1.y = bg1.y + scrollSpeed
@@ -550,13 +580,8 @@ local function move(event)
  end
 end
  
--- Create a runtime event to move backgrounds
-Runtime:addEventListener( "enterFrame", move )
-
-
 -- Fire rate
 function fireRate()
-
 	if fireLoopTimer then
 		timer.cancel(fireLoopTimer)
 		fireLoopTimer = nil
@@ -606,7 +631,10 @@ function scene:show( event )
 		Runtime:addEventListener( "collision", onCollision )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop2, 0 )
+		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
+		startTime = os.date( '*t' )
 		fireRate()
+		
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
 
@@ -653,6 +681,10 @@ scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
+-- -----------------------------------------------------------------------------------
+
+-- Create a runtime event to move backgrounds
+Runtime:addEventListener( "enterFrame", move )
 -- -----------------------------------------------------------------------------------
 
 return scene
