@@ -96,10 +96,13 @@ local ship
 local gameLoopTimer
 local gameLoop2Timer
 local fireLoopTimer
+local gameClockTimer
 local livesText
 local scoreText
 local playNameText
 local powerText
+local gameTime
+local startTime
 
 local backGroup
 local mainGroup
@@ -333,7 +336,7 @@ local function restoreShip()
 			ship.isBodyActive = true
 			died = false
             playNameText.alpha = ship.alpha
-            fireLaser()
+            fireRate()
 		end
 	} )
 
@@ -522,6 +525,8 @@ function scene:create( event )
     --playNameText.myName = "name"
 
 	-- Display lives and score
+	--startTimeText = display.newText( uiGroup, "", 400, 80, native.systemFont, 36 )
+
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
 	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
@@ -547,6 +552,15 @@ function scene:create( event )
  	volumeLow:addEventListener("tap", changeMute)
 end
  
+function updateTime()
+	gameTime = os.date( '*t' )
+	--print(startTime.sec - gameTime.sec)
+	if(gameTime.sec == startTime.sec + 30) then
+		print("30 sec has passed")
+	end
+	-- body
+end
+
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
 	bg1.y = bg1.y + scrollSpeed
@@ -617,7 +631,10 @@ function scene:show( event )
 		Runtime:addEventListener( "collision", onCollision )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop2, 0 )
+		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
+		startTime = os.date( '*t' )
 		fireRate()
+		
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
 
