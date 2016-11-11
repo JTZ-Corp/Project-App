@@ -77,6 +77,12 @@ local sheetOptions2 =
             width = 24,
             height = 36
         },
+        {   -- 5) big asteroid
+			x = 130,
+            y = 1,
+            width = 185,
+            height = 152
+        },
     }
 }
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
@@ -86,11 +92,14 @@ local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 local lives = 3
 local score = 0
 local powerlevel = 0
-local powerCount = 0
+local powerCount = 500
 local died = false
+local bigAstroid = false
+local hitCount = 0;
 
 local asteroidsTable = {}
 local powerTable = {}
+local bigAstroidTable = {}
 
 local ship
 local gameLoopTimer
@@ -101,6 +110,7 @@ local livesText
 local scoreText
 local playNameText
 local powerText
+local hitText
 local gameTime
 local startTime
 
@@ -123,6 +133,11 @@ local scrollSpeed = 2; -- Set Scroll Speed of background
 local bg1
 local bg2
 local bg3
+
+local leftWall
+local rightWall 
+local topWall
+local botWall
 
 local function updateText()
 	livesText.text = "Lives: " .. lives
@@ -184,6 +199,21 @@ local function createAsteroid()
 		
 		megaAsteroid:applyTorque( math.random( -6,20 ) )
 	end
+end
+
+local function createBigAsteroid()
+
+	local newBig = display.newImageRect( mainGroup, objectSheet2, 5, 600, 600 )
+	table.insert( bigAstroidTable, newBig )	
+	physics.addBody( newBig, "dynamic", { radius=300, bounce=0.8 } )	
+	newBig.myName = "big"
+
+	-- From the top
+	newBig.x = display.contentCenterX
+	newBig.y = -120
+	newBig:setLinearVelocity( 0, 40)
+	newBig:applyTorque( math.random( -4,4 ) )
+
 end
 
 local function createPower()
@@ -304,19 +334,25 @@ end
 
 local function gameLoop()
 
-	-- Create new asteroid
-	createAsteroid()
-	-- Remove asteroids which have drifted off screen
-	for i = #asteroidsTable, 1, -1 do
-		local thisAsteroid = asteroidsTable[i]
+	if(bigAstroid == false) then
+		-- Create new asteroid
+		createAsteroid()
+		-- Remove asteroids which have drifted off screen
+		for i = #asteroidsTable, 1, -1 do
+			local thisAsteroid = asteroidsTable[i]
 
-		if ( thisAsteroid.x < -100 or
-			 thisAsteroid.x > display.contentWidth + 100 or
-			 thisAsteroid.y < -100 or
-			 thisAsteroid.y > display.contentHeight + 100 )
-		then
-			display.remove( thisAsteroid )
-			table.remove( asteroidsTable, i )
+			if ( thisAsteroid.x < -100 or
+				 thisAsteroid.x > display.contentWidth + 100 or
+				 thisAsteroid.y < -100 or
+				 thisAsteroid.y > display.contentHeight + 100 )
+			then
+				display.remove( thisAsteroid )
+				table.remove( asteroidsTable, i )
+			end
+		end
+	else
+		if #bigAstroidTable == 0 then
+			createBigAsteroid()
 		end
 	end
 end
@@ -351,6 +387,7 @@ local function endGame()
 end
 
 
+
 local function onCollision( event )
 
 	if ( event.phase == "began" ) then
@@ -366,7 +403,12 @@ local function onCollision( event )
 			 ( obj1.myName == "megalaser" and obj2.myName == "asteroid" ) or
 			 ( obj1.myName == "asteroid" and obj2.myName == "megalaser" ) or 
 			 ( obj1.myName == "megaroid" and obj2.myName == "megalaser" ) or
-			 ( obj1.myName == "megalaser" and obj2.myName == "megaroid" ))
+			 ( obj1.myName == "megalaser" and obj2.myName == "megaroid" ) or
+			 
+			 ( obj1.myName == "laser" and obj2.myName == "big" ) or
+			 ( obj1.myName == "big" and obj2.myName == "laser" ) or
+			 ( obj1.myName == "big" and obj2.myName == "megalaser" ) or 
+			 ( obj1.myName == "megalaser" and obj2.myName == "big" ))
 		then
 			-- Check if asteriod is a megaroid
 			local isMegaRoid
@@ -380,13 +422,36 @@ local function onCollision( event )
 				isMegaRoid = false
 			end
 			-- Remove both the laser and asteroid
-			if(obj1.myName == "megalaser") then
-				display.remove( obj2 )
-			elseif(obj2.myName == "megalaser") then
-            	display.remove( obj1 )
-            else
-				display.remove( obj1 )
-            	display.remove( obj2 )
+			if(obj1.myName ~= "big" and obj2.myName ~= "big") then
+				if(obj1.myName == "megalaser") then
+					display.remove( obj2 )
+				elseif(obj2.myName == "megalaser") then
+	            	display.remove( obj1 )
+	            else
+					display.remove( obj1 )
+	            	display.remove( obj2 )
+	            end
+	        else
+	        	if hitCount < 190 then 
+		        	if(obj1.myName == "big" and (obj2.myName == "laser" or obj2.myName == "megalaser")) then
+						display.remove( obj2 )
+						if(obj2.myName == "laser") then
+							hitCount = hitCount + 1
+						else
+							hitCount = hitCount + 3
+						end
+					elseif(obj2.myName == "big" and (obj1.myName == "laser" or obj1.myName == "megalaser")) then
+		            	display.remove( obj1 )
+		            	if(obj1.myName == "laser") then
+							hitCount = hitCount + 1
+						else
+							hitCount = hitCount + 3
+						end
+		            end
+		        else
+		        	display.remove( obj1 )
+	            	display.remove( obj2 )
+	            end
             end
 			-- Play explosion sound!
             audio.play( explosionSound )
@@ -408,11 +473,14 @@ local function onCollision( event )
 			end
 			scoreText.text = "Score: " .. score
 			powerText.text = "Power: " .. powerlevel
+			hitText.text = "Hits: " .. hitCount
 
 		elseif ( ( obj1.myName == "ship" and obj2.myName == "asteroid" ) or
 				 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) or 
 			 	( obj1.myName == "megaroid" and obj2.myName == "ship" ) or
-			 	( obj1.myName == "ship" and obj2.myName == "megaroid" ))
+			 	( obj1.myName == "ship" and obj2.myName == "megaroid" ) or
+				 ( obj1.myName == "big" and obj2.myName == "ship" ) or 
+			 	( obj1.myName == "ship" and obj2.myName == "big" ))
 		then
 			if ( died == false ) then
 				died = true
@@ -425,7 +493,9 @@ local function onCollision( event )
 				powerlevel = 0
 				livesText.text = "Lives: " .. lives
 				powerText.text = "Power: " .. powerlevel
-				
+				if powerCount > 200 then
+					powerCount = powerCount - 200
+				end
 
 				if fireLoopTimer then
 					timer.cancel(fireLoopTimer)
@@ -530,6 +600,7 @@ function scene:create( event )
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
 	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
+	hitText = display.newText( uiGroup, "Hits: " .. hitCount, 400, 80, native.systemFont, 26 )
 
 	--background:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
@@ -555,29 +626,34 @@ end
 function updateTime()
 	gameTime = os.date( '*t' )
 	--print(startTime.sec - gameTime.sec)
-	if(gameTime.sec == startTime.sec + 30) then
-		print("30 sec has passed")
+	print(gameTime.min .. ":" .. gameTime.sec)
+	if(gameTime.min == startTime.min + 1 and gameTime.sec == startTime.sec) then
+		print("boss has arrived")
+		bigAstroid = true
 	end
 	-- body
 end
 
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
-	bg1.y = bg1.y + scrollSpeed
-	bg2.y = bg2.y + scrollSpeed
-	bg3.y = bg3.y + scrollSpeed
-	 
-	-- Set up listeners so when backgrounds hits a certain point off the screen,
-	-- move the background to the right off screen
-	 if (bg1.y + bg1.contentWidth) > 2800 then
-	  bg1:translate( 0, -2800 )
-	 end
-	 if (bg2.y + bg2.contentWidth) > 2800 then
-	  bg2:translate( 0, -2800 )
-	 end
-	 if (bg3.y + bg3.contentWidth) > 2800 then
-	  bg3:translate( 0, -2800 )
- end
+	
+ 	if #bigAstroidTable <= 0 then
+	 	bg1.y = bg1.y + scrollSpeed
+		bg2.y = bg2.y + scrollSpeed
+		bg3.y = bg3.y + scrollSpeed
+		 
+		-- Set up listeners so when backgrounds hits a certain point off the screen,
+		-- move the background to the right off screen
+		 if (bg1.y + bg1.contentWidth) > 2800 then
+		  bg1:translate( 0, -2800 )
+		 end
+		 if (bg2.y + bg2.contentWidth) > 2800 then
+		  bg2:translate( 0, -2800 )
+		 end
+		 if (bg3.y + bg3.contentWidth) > 2800 then
+		  bg3:translate( 0, -2800 )
+	 	end
+ 	end
 end
  
 -- Fire rate
@@ -629,6 +705,7 @@ function scene:show( event )
 		-- Code here runs when the scene is entirely on screen
 		physics.start()
 		Runtime:addEventListener( "collision", onCollision )
+		Runtime:addEventListener( "enterFrame", move )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop2, 0 )
 		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
@@ -651,10 +728,14 @@ function scene:hide( event )
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )
+		timer.cancel( gameLoop2Timer )
+		--timer.cancel( fireLoopTimer )
+		--timer.cancel( gameClockTimer )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 		Runtime:removeEventListener( "collision", onCollision )
+		Runtime:removeEventListener( "enterFrame", move )
 		physics.pause()
 		 -- Stop the music!
         audio.stop( 1 )
@@ -683,8 +764,6 @@ scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
 -- -----------------------------------------------------------------------------------
 
--- Create a runtime event to move backgrounds
-Runtime:addEventListener( "enterFrame", move )
 -- -----------------------------------------------------------------------------------
 
 return scene
