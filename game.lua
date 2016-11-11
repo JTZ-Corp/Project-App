@@ -581,12 +581,12 @@ function mutePlay()
 	if (mute) then
 		volumeLow.isVisible = true
 		volume.isVisible = false
-		audio.pause( musicTrack )
+		audio.setVolume( 0 )
 
 	else
 		volumeLow.isVisible = false
 		volume.isVisible = true
-		audio.play( musicTrack )
+		audio.setVolume( 1 )
 	end
 
 end
