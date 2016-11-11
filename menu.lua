@@ -121,6 +121,7 @@ function textListener ( event )
 	    -- do something with the text
 	    --print ( "Hello " .. event.target.text)
 	    composer.setVariable( "playerName", event.target.text )
+	    native.setKeyboardFocus(nil)
 
 	elseif (phase == "editing") then
     	-- do something while editing

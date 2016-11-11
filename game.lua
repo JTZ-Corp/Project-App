@@ -104,6 +104,13 @@ local explosionSound
 local fireSound
 local musicTrack
 
+local _W = display.contentWidth; -- Get the width of the screen
+local _H = display.contentHeight; -- Get the height of the screen
+local scrollSpeed = 2; -- Set Scroll Speed of background
+local bg1
+local bg2
+local bg3
+
 local function updateText()
 	livesText.text = "Lives: " .. lives
 	scoreText.text = "Score: " .. score
@@ -117,12 +124,13 @@ local function createAsteroid()
 	local whereFrom
 	if ((whatAsteriod % 5) ~= 0) then
 
-	local newAsteroid = display.newImageRect( mainGroup, objectSheet, 1, 102, 85 )
-	table.insert( asteroidsTable, newAsteroid )	
-	physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )	
-	newAsteroid.myName = "asteroid"
-
 	 	whereFrom = math.random( 3 )
+		local newAsteroid = display.newImageRect( mainGroup, objectSheet, whereFrom, 102, 85 )
+		table.insert( asteroidsTable, newAsteroid )	
+		physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )	
+		newAsteroid.myName = "asteroid"
+
+
 		if ( whereFrom == 1 ) then
 			-- From the left
 			newAsteroid.x = -60
@@ -143,12 +151,12 @@ local function createAsteroid()
 		newAsteroid:applyTorque( math.random( -6,6 ) )
 	else
 
-		local megaAsteroid = display.newImageRect( mainGroup, objectSheet2, 1, 160, 125 )
+		whereFrom = math.random( 2 )
+		local megaAsteroid = display.newImageRect( mainGroup, objectSheet2, whereFrom, 160, 125 )
 		table.insert( asteroidsTable, megaAsteroid )
 		physics.addBody( megaAsteroid, "dynamic", { radius=50, bounce=0.9 } )
 		megaAsteroid.myName = "megaroid"
 
-		whereFrom = math.random( 2 )
 		if ( whereFrom == 1 ) then
 			-- From the left
 			megaAsteroid.x = math.random( display.contentWidth )
@@ -236,7 +244,7 @@ local function gameLoop()
 
 	-- Create new asteroid
 	createAsteroid()
-
+    
 	-- Remove asteroids which have drifted off screen
 	for i = #asteroidsTable, 1, -1 do
 		local thisAsteroid = asteroidsTable[i]
@@ -298,7 +306,6 @@ local function onCollision( event )
 			 ( obj1.myName == "megalaser" and obj2.myName == "megaroid" ))
 		then
 			-- Check if asteriod is a megaroid
-
 			local isMegaRoid
 			if( (obj1.myName == "laser" and obj2.myName == "megaroid") or 
 				(obj1.myName == "megaroid" and obj2.myName == "laser") or
@@ -392,9 +399,27 @@ function scene:create( event )
 	sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
 	
 	-- Load the background
-	local background = display.newImageRect( backGroup, "background.png", 800, 1400 )
-	background.x = display.contentCenterX
-	background.y = display.contentCenterY
+	--local background = display.newImageRect( backGroup, "background.png", 800, 1400 )
+	--background.x = display.contentCenterX
+	--background.y = display.contentCenterY
+
+
+	bg1 = display.newImageRect( backGroup, "background.png", 800, 1400 )
+	bg1.anchorX = 0.0;
+	bg1.anchorY = 0.5;
+	bg1.x = 0; bg1.y = _H/2;
+	 
+	-- Add Second Background
+	bg2 = display.newImageRect( backGroup, "background.png", 800, 1400 )
+	bg2.anchorX = 0.0;
+	bg2.anchorY = 0.5;
+	bg2.x = 0; bg2.y = bg1.y-1400;
+	 
+	-- Add Third Background
+	bg3 = display.newImageRect( backGroup, "background.png", 800, 1400 )
+	bg3.anchorX = 0.0;
+	bg3.anchorY = 0.5;
+	bg3.x = 0; bg3.y = bg2.y-1400;
 	
 	ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
 	ship.x = display.contentCenterX
@@ -406,11 +431,11 @@ function scene:create( event )
     --playNameText.myName = "name"
 
 	-- Display lives and score
-	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 80, native.systemFont, 36 )
-	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 80, native.systemFont, 36 )
-	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 40, native.systemFont, 26 )
+	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
+	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
+	powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
 
-	background:addEventListener( "tap", fireLaser )
+	--background:addEventListener( "tap", fireLaser )
 	ship:addEventListener( "touch", dragShip )
 
  	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
@@ -418,19 +443,47 @@ function scene:create( event )
 	fireSound = audio.loadSound( "audio/fire.wav" )
 
 	--create volume
-	volume = display.newImageRect(backGroup, "volume-max.png", 70,70)
+	volume = display.newImageRect(backGroup, "volume-max.png", 50,50)
 	volume.x = display.contentCenterX + 230
-	volume.y = display.contentCenterY - 430
+	volume.y = display.contentCenterY - 450
 
-	volumeLow = display.newImageRect(backGroup, "volume-low.png", 70,70)
+	volumeLow = display.newImageRect(backGroup, "volume-low.png", 52,52)
 	volumeLow.x = display.contentCenterX + 219
-	volumeLow.y = display.contentCenterY - 430
+	volumeLow.y = display.contentCenterY - 450
 	volumeLow.isVisible = false
  	
  	volume:addEventListener("tap", changeMute)
  	volumeLow:addEventListener("tap", changeMute)
 end
+ 
+local function move(event)
+	-- move backgrounds to the left by scrollSpeed, default is 8
+	bg1.y = bg1.y + scrollSpeed
+	bg2.y = bg2.y + scrollSpeed
+	bg3.y = bg3.y + scrollSpeed
+	 
+	-- Set up listeners so when backgrounds hits a certain point off the screen,
+	-- move the background to the right off screen
+	 if (bg1.y + bg1.contentWidth) > 2800 then
+	  bg1:translate( 0, -2800 )
+	 end
+	 if (bg2.y + bg2.contentWidth) > 2800 then
+	  bg2:translate( 0, -2800 )
+	 end
+	 if (bg3.y + bg3.contentWidth) > 2800 then
+	  bg3:translate( 0, -2800 )
+ end
+end
+ 
+-- Create a runtime event to move backgrounds
+Runtime:addEventListener( "enterFrame", move )
 
+
+-- Fire rate
+local function fireRate()
+	fireLaser()
+	-- body
+end
 --volumer function
 function changeMute()
 	mute = not mute
@@ -443,19 +496,16 @@ function mutePlay()
 		volumeLow.isVisible = true
 		volume.isVisible = false
 		audio.pause( musicTrack )
-		audio.pause( explosionSound )
-		audio.pause( fireSound )
 
 	else
 		volumeLow.isVisible = false
 		volume.isVisible = true
 		audio.play( musicTrack )
-		audio.play( explosionSound )
-		audio.play( fireSound )
 	end
 
 end
 
+local fireLoopTimer
 -- show()
 function scene:show( event )
 
@@ -470,8 +520,10 @@ function scene:show( event )
 		physics.start()
 		Runtime:addEventListener( "collision", onCollision )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
+		fireLoopTimer = timer.performWithDelay( 1000, fireLaser, 0)
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
+
 	end
 end
 
