@@ -83,6 +83,18 @@ local sheetOptions2 =
             width = 185,
             height = 152
         },
+        {   -- 6) custom mega shot
+			x = 122,
+            y = 159,
+            width = 63,
+            height = 63
+        },
+        {   -- 7) custom shot
+			x = 119,
+            y = 227,
+            width = 24,
+            height = 54
+        },
     }
 }
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
@@ -97,6 +109,8 @@ local died = false
 local bigAstroid = false
 local hitCount = 0;
 local minuteCount = 1
+local megaShotProfile = 3
+local simpleShotProfile = 5
 
 local asteroidsTable = {}
 local powerTable = {}
@@ -254,7 +268,7 @@ local function fireLaser()
 
     if(powerlevel >= 10) then
 
-	    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, 3, 100, 40 )
+	    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, megaShotProfile, 100, 40 )
 		physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
 		newMegaLaser.isBullet = true
 		newMegaLaser.myName = "megalaser"
@@ -269,7 +283,7 @@ local function fireLaser()
 		powerlevel = powerlevel - 10
     else
 
-		local newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
+		local newLaser = display.newImageRect( mainGroup, objectSheet, simpleShotProfile, 14, 40 )
 		physics.addBody( newLaser, "dynamic", { isSensor=true } )
 		newLaser.isBullet = true
 		newLaser.myName = "laser"
@@ -472,6 +486,13 @@ local function onCollision( event )
 	            	display.remove( obj2 )
 	            	bigAstroid = false
 	            	minuteCount = minuteCount + 1
+	            	hitCount = 0
+	            	for i = #bigAstroidTable, 1, -1 do
+						if ( bigAstroidTable[i] == obj1 or bigAstroidTable[i] == obj2 ) then
+						table.remove( bigAstroidTable, i )
+						break
+						end
+					end
 	            end
             end
 			-- Play explosion sound!
@@ -658,7 +679,7 @@ end
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
 	
- 	if #bigAstroidTable > 0 then
+ 	if bigAstroid == false then
 	 	bg1.y = bg1.y + scrollSpeed
 		bg2.y = bg2.y + scrollSpeed
 		bg3.y = bg3.y + scrollSpeed
@@ -737,6 +758,8 @@ function scene:show( event )
 		if(composer.getVariable( "playerName" ) == "jordan" or composer.getVariable( "playerName" ) == "ted" or composer.getVariable( "playerName" ) == "zia") then
 			powerlevel = 10000
 			powerCount = 1000
+			megaShotProfile = 6
+			simpleShotProfile = 7
 		end
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
