@@ -268,7 +268,7 @@ local function dragShip( event )
 		ship.x = event.x - ship.touchOffsetX
 		playNameText.x = event.x - ship.touchOffsetX 
 		ship.y = event.y - ship.touchOffsetY
-		playNameText.y = event.y - ship.touchOffsetY - 50
+		playNameText.y = event.y - ship.touchOffsetY + 50
 
 	elseif ( "ended" == phase or "cancelled" == phase ) then
 		-- Release touch focus on the ship
@@ -605,7 +605,7 @@ function scene:show( event )
 		physics.start()
 		Runtime:addEventListener( "collision", onCollision )
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
-		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop, 1 )
+		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop2, 0 )
 		fireRate()
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
