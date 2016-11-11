@@ -514,8 +514,8 @@ local function onCollision( event )
 				powerlevel = 0
 				livesText.text = "Lives: " .. lives
 				--powerText.text = "Power: " .. powerlevel
-				if powerCount > 200 then
-					powerCount = powerCount - 200
+				if powerCount > 100 then
+					powerCount = powerCount - 100
 				end
 
 				if fireLoopTimer then
@@ -612,7 +612,7 @@ function scene:create( event )
 	physics.addBody( ship, { radius=30, isSensor=true } )
 	ship.myName = "ship"
 
-    playNameText = display.newText( mainGroup, composer.getVariable( "playerName" ), ship.x, ship.y + 50, native.systemFont, 26 )
+    playNameText = display.newText( mainGroup, "", ship.x, ship.y + 50, native.systemFont, 26 )
     --playNameText.myName = "name"
 
 	-- Display lives and score
@@ -658,7 +658,7 @@ end
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
 	
- 	if #bigAstroidTable <= 0 then
+ 	if #bigAstroidTable > 0 then
 	 	bg1.y = bg1.y + scrollSpeed
 		bg2.y = bg2.y + scrollSpeed
 		bg3.y = bg3.y + scrollSpeed
@@ -732,7 +732,12 @@ function scene:show( event )
 		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
 		startTime = os.date( '*t' )
 		fireRate()
-		
+		playNameText.text = composer.getVariable( "playerName" )
+		--Add mode for developers
+		if(composer.getVariable( "playerName" ) == "jordan" or composer.getVariable( "playerName" ) == "ted" or composer.getVariable( "playerName" ) == "zia") then
+			powerlevel = 10000
+			powerCount = 1000
+		end
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
 

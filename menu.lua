@@ -10,7 +10,7 @@ local nametext
 
 local function gotoGame()
 	composer.removeScene( "game" )
-	print(composer.getVariable( "playerName"))
+	--print(composer.getVariable( "playerName"))
 	if (tostring(composer.getVariable( "playerName")) == "nil") then
 		composer.setVariable( "playerName", "" )
 	end
@@ -74,6 +74,10 @@ function scene:show( event )
 		nametext.placeholder = "Enter Name"
 		sceneGroup:insert(nametext)
 		nametext:addEventListener("userInput", textListener)
+		if (tostring(composer.getVariable( "playerName")) ~= "nil") then
+			nameText.text = composer.getVariable( "playerName")
+		end
+		--print(composer.getVariable( "playerName"))
 	end
 end
 
