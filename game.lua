@@ -301,6 +301,8 @@ end
 
 local function createBigAsteroid()
 
+	audio.stop(1)
+	audio.play( bossTrack, { channel=2, loops=-1 } )
 	local newBig = display.newImageRect( mainGroup, objectSheet2, 5, 600, 600 )
 	table.insert( bigAstroidTable, newBig )	
 	physics.addBody( newBig, "dynamic", { radius=300, bounce=0.8 } )	
@@ -598,6 +600,8 @@ local function onCollision( event )
 						break
 						end
 					end
+					audio.stop(2)
+					audio.play( musicTrack, { channel=1, loops=-1 } )
 	            end
             end
 			-- Play explosion sound!
@@ -751,6 +755,7 @@ function scene:create( event )
 	explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
 	levelupSound = audio.loadSound( "audio/levelup.wav" )
+	bossTrack = audio.loadSound( "audio/Escape_Looping.wav" )
 
 	--create volume
 	volume = display.newImageRect(backGroup, "volume-max.png", 50,50)
@@ -923,6 +928,7 @@ function scene:destroy( event )
     audio.dispose( fireSound )
     audio.dispose( musicTrack )
     audio.dispose( levelupSound )
+    audio.dispose( bossTrack )
 end
 
 
