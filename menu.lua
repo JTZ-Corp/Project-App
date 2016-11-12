@@ -11,7 +11,7 @@ local sheetOptions =
 {
     frames =
     {
-        {   -- 4) ship
+        {   -- 1) ship
             x = 0,
             y = 265,
             width = 98,
@@ -134,7 +134,7 @@ function scene:create( event )
 	ship4.y = display.contentCenterY 
     ship4.name = "ship4"
 
-    ship5 = display.newImageRect( sceneGroup, objectSheet, 4, 98, 79 )
+    ship5 = display.newImageRect( sceneGroup, objectSheet, 1, 98, 79 )
 	ship5.x = display.contentCenterX - 220
 	ship5.y = display.contentCenterY - 20
     ship5.name = "ship5"

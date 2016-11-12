@@ -222,6 +222,8 @@ local mute = false
 local explosionSound
 local fireSound
 local musicTrack
+local levelupSound
+local bossTrack
 
 local _W = display.contentWidth; -- Get the width of the screen
 local _H = display.contentHeight; -- Get the height of the screen
@@ -668,6 +670,8 @@ local function onCollision( event )
 			elseif(obj2.myName == "power") then
             	display.remove( obj2 )
             end
+			 -- Play explosion sound!
+            audio.play( levelupSound )
 
             for i = #powerTable, 1, -1 do
 				if ( powerTable[i] == obj1 or powerTable[i] == obj2 ) then
@@ -746,6 +750,7 @@ function scene:create( event )
  	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
 	explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
+	levelupSound = audio.loadSound( "audio/levelup.wav" )
 
 	--create volume
 	volume = display.newImageRect(backGroup, "volume-max.png", 50,50)
@@ -917,6 +922,7 @@ function scene:destroy( event )
     audio.dispose( explosionSound )
     audio.dispose( fireSound )
     audio.dispose( musicTrack )
+    audio.dispose( levelupSound )
 end
 
 
