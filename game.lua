@@ -72,10 +72,10 @@ local sheetOptions2 =
             height = 46
         },
         {   -- 4) power up
-			x = 88,
-            y = 4,
-            width = 24,
-            height = 36
+			x = 87,
+            y = 2,
+            width = 26,
+            height = 26
         },
         {   -- 5) big asteroid
 			x = 130,
@@ -97,11 +97,90 @@ local sheetOptions2 =
         },
     }
 }
+local spaceshipOptions =
+{
+    frames =
+    {
+        {   -- 1) spaceship 1
+            x = 0,
+            y = 0,
+            width = 269,
+            height = 175
+        },
+        {   -- 2) spaceship 2
+            x = 30,
+            y = 230,
+            width = 219,
+            height = 201
+        },
+        {   -- 3) spaceship 3
+            x = 0,
+            y = 415,
+            width = 281,
+            height = 271
+        },
+        {   -- 4) spaceship 4
+            x = 44,
+            y = 703,
+            width = 197,
+            height = 247
+        },
+        {   -- 5) laser 1
+            x = 303,
+            y = 79,
+            width = 39,
+            height = 124
+        },
+        {   -- 6) laser 2
+            x = 355,
+            y = 276,
+            width = 45,
+            height = 141
+        },
+        {   -- 7) laser 3
+            x = 287,
+            y = 485,
+            width = 58,
+            height = 203
+        },
+        {   -- 8) laser 4
+            x = 290,
+            y = 861,
+            width = 50,
+            height = 127
+        },
+        {   -- 9) megalaser 1
+            x = 253,
+            y = 0,
+            width = 144,
+            height = 71
+        },
+        {   -- 10) megalaser 2
+            x = 250,
+            y = 214,
+            width = 140,
+            height = 58
+        },
+        {   -- 11) megalaser 3
+            x = 273,
+            y = 382,
+            width = 87,
+            height = 98
+        },
+        {   -- 12) megalaser 4
+            x = 246,
+            y = 696,
+            width = 144,
+            height = 138
+        },
+    }
+}
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
 local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
+local modSheet = graphics.newImageSheet( "modObjects.png", spaceshipOptions )
 
 -- Initialize variables
-local lives = 3
+local lives = 1
 local score = 0
 local powerlevel = 0
 local powerCount = 500
@@ -109,12 +188,14 @@ local died = false
 local bigAstroid = false
 local hitCount = 0;
 local minuteCount = 1
-local megaShotProfile = 3
-local simpleShotProfile = 5
+local megaShotProfile
+local simpleShotProfile
+local mod = false
 
 local asteroidsTable = {}
 local powerTable = {}
 local bigAstroidTable = {}
+local modProfile
 
 local ship
 local gameLoopTimer
@@ -257,7 +338,7 @@ local function createPower()
 		newPower:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
 	end
 
-	--newPower:applyTorque( math.random( -6,6 ) )
+	newPower:applyTorque( math.random( -6,6 ) )
 end
 
 
@@ -265,10 +346,35 @@ local function fireLaser()
 
  	-- Play fire sound!
     audio.play( fireSound )
-
+    local newMegaLaser
+    local newLaser 
+    local modLaser
+    local modMegalaser
+ 	if mod == true then
+ 		if modProfile == "jordan" then
+			modLaser = 5
+    		modMegalaser = 9
+		elseif modProfile == "ted" then
+			modLaser = 6
+    		modMegalaser = 10
+		elseif modProfile == "zia" then
+			modLaser = 7
+    		modMegalaser = 11
+		elseif modProfile == "jtz" then
+			modLaser = 8
+    		modMegalaser = 12
+		end
+	else
+		megaShotProfile = 3
+		simpleShotProfile = 5
+ 	end
     if(powerlevel >= 10) then
 
-	    local newMegaLaser = display.newImageRect( mainGroup, objectSheet2, megaShotProfile, 100, 40 )
+ 		if mod == false then
+	    	newMegaLaser = display.newImageRect( mainGroup, objectSheet2, megaShotProfile, 100, 40 )
+	    else
+	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, modMegalaser, 100, 40 )
+	    end
 		physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
 		newMegaLaser.isBullet = true
 		newMegaLaser.myName = "megalaser"
@@ -282,8 +388,11 @@ local function fireLaser()
 		} )
 		powerlevel = powerlevel - 10
     else
-
-		local newLaser = display.newImageRect( mainGroup, objectSheet, simpleShotProfile, 14, 40 )
+ 		if mod == false then
+			newLaser = display.newImageRect( mainGroup, objectSheet, simpleShotProfile, 14, 40 )
+		else
+			newLaser = display.newImageRect( mainGroup, modSheet, modLaser, 14, 40 )	
+		end
 		physics.addBody( newLaser, "dynamic", { isSensor=true } )
 		newLaser.isBullet = true
 		newLaser.myName = "laser"
@@ -627,13 +736,7 @@ function scene:create( event )
 	bg3.anchorY = 0.5;
 	bg3.x = 0; bg3.y = bg2.y-1400;
 	
-	ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
-	ship.x = display.contentCenterX
-	ship.y = display.contentHeight - 100
-	physics.addBody( ship, { radius=30, isSensor=true } )
-	ship.myName = "ship"
 
-    playNameText = display.newText( mainGroup, "", ship.x, ship.y + 50, native.systemFont, 26 )
     --playNameText.myName = "name"
 
 	-- Display lives and score
@@ -645,7 +748,6 @@ function scene:create( event )
 	--hitText = display.newText( uiGroup, "Hits: " .. hitCount, 400, 80, native.systemFont, 26 )
 
 	--background:addEventListener( "tap", fireLaser )
-	ship:addEventListener( "touch", dragShip )
 
  	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
 	explosionSound = audio.loadSound( "audio/explosion.wav" )
@@ -675,7 +777,30 @@ function updateTime()
 	end
 	-- body
 end
+function createShip()
+	if mod == false then
+		ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
+	else
+		if modProfile == "jordan" then
+			ship = display.newImageRect( mainGroup, modSheet, 1, 98, 79 )
+		elseif modProfile == "ted" then
+			ship = display.newImageRect( mainGroup, modSheet, 2, 98, 79 )
+		elseif modProfile == "zia" then
+			ship = display.newImageRect( mainGroup, modSheet, 3, 98, 79 )
+		elseif modProfile == "jtz" then
+			ship = display.newImageRect( mainGroup, modSheet, 4, 98, 79 )
+		end
+	end
+	ship.x = display.contentCenterX
+	ship.y = display.contentHeight - 100
+	physics.addBody( ship, { radius=30, isSensor=true } )
+	ship.myName = "ship"
 
+	ship:addEventListener( "touch", dragShip )
+	playNameText = display.newText( mainGroup, "", ship.x, ship.y + 50, native.systemFont, 26 )
+
+		playNameText.text = composer.getVariable( "playerName" )
+end
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
 	
@@ -753,17 +878,19 @@ function scene:show( event )
 		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
 		startTime = os.date( '*t' )
 		fireRate()
-		playNameText.text = composer.getVariable( "playerName" )
 		--Add mode for developers
-		if(composer.getVariable( "playerName" ) == "jordan" or composer.getVariable( "playerName" ) == "ted" or composer.getVariable( "playerName" ) == "zia") then
-			powerlevel = 10000
+		if(composer.getVariable( "playerName" ) == "jordan" or 
+			composer.getVariable( "playerName" ) == "ted" or 
+			composer.getVariable( "playerName" ) == "zia" or 
+			composer.getVariable( "playerName" ) == "jtz") then
+			mod = true
+			powerlevel = 1000
 			powerCount = 1000
-			megaShotProfile = 6
-			simpleShotProfile = 7
+			modProfile = composer.getVariable( "playerName" )
 		end
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
-
+        createShip()
 	end
 end
 

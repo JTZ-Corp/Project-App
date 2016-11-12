@@ -75,7 +75,7 @@ function scene:show( event )
 		sceneGroup:insert(nametext)
 		nametext:addEventListener("userInput", textListener)
 		if (tostring(composer.getVariable( "playerName")) ~= "nil") then
-			nameText.text = composer.getVariable( "playerName")
+			nametext.text = composer.getVariable( "playerName")
 		end
 		--print(composer.getVariable( "playerName"))
 	end
