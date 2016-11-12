@@ -108,10 +108,10 @@ local spaceshipOptions =
             height = 175
         },
         {   -- 2) spaceship 2
-            x = 30,
-            y = 230,
-            width = 219,
-            height = 201
+            x = 45,
+            y = 185,
+            width = 197,
+            height = 207
         },
         {   -- 3) spaceship 3
             x = 0,
@@ -180,7 +180,7 @@ local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 local modSheet = graphics.newImageSheet( "modObjects.png", spaceshipOptions )
 
 -- Initialize variables
-local lives = 1
+local lives = 3
 local score = 0
 local powerlevel = 0
 local powerCount = 500
@@ -190,7 +190,7 @@ local hitCount = 0;
 local minuteCount = 1
 local megaShotProfile
 local simpleShotProfile
-local mod = false
+local shipName
 
 local asteroidsTable = {}
 local powerTable = {}
@@ -338,7 +338,7 @@ local function createPower()
 		newPower:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
 	end
 
-	newPower:applyTorque( math.random( -6,6 ) )
+	--newPower:applyTorque( math.random( -6,6 ) )
 end
 
 
@@ -348,32 +348,19 @@ local function fireLaser()
     audio.play( fireSound )
     local newMegaLaser
     local newLaser 
-    local modLaser
-    local modMegalaser
- 	if mod == true then
- 		if modProfile == "jordan" then
-			modLaser = 5
-    		modMegalaser = 9
-		elseif modProfile == "ted" then
-			modLaser = 6
-    		modMegalaser = 10
-		elseif modProfile == "zia" then
-			modLaser = 7
-    		modMegalaser = 11
-		elseif modProfile == "jtz" then
-			modLaser = 8
-    		modMegalaser = 12
-		end
-	else
-		megaShotProfile = 3
-		simpleShotProfile = 5
- 	end
+
     if(powerlevel >= 10) then
 
- 		if mod == false then
-	    	newMegaLaser = display.newImageRect( mainGroup, objectSheet2, megaShotProfile, 100, 40 )
-	    else
-	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, modMegalaser, 100, 40 )
+ 		if shipName == "ship5" then
+	    	newMegaLaser = display.newImageRect( mainGroup, objectSheet2, 3, 100, 40 )
+	    elseif shipName == "ship1" then
+	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, 9, 100, 40 )
+	    elseif shipName == "ship2" then
+	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, 10, 100, 40 )
+	    elseif shipName == "ship3" then
+	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, 11, 100, 40 )
+	    elseif shipName == "ship4" then
+	    	newMegaLaser = display.newImageRect( mainGroup, modSheet, 12, 100, 40 )
 	    end
 		physics.addBody( newMegaLaser, "dynamic", { isSensor=true } )
 		newMegaLaser.isBullet = true
@@ -388,11 +375,18 @@ local function fireLaser()
 		} )
 		powerlevel = powerlevel - 10
     else
- 		if mod == false then
-			newLaser = display.newImageRect( mainGroup, objectSheet, simpleShotProfile, 14, 40 )
-		else
-			newLaser = display.newImageRect( mainGroup, modSheet, modLaser, 14, 40 )	
-		end
+
+ 		if shipName == "ship5" then
+	    	newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
+	    elseif shipName == "ship1" then
+	    	newLaser = display.newImageRect( mainGroup, modSheet, 5, 14, 40 )	
+	    elseif shipName == "ship2" then
+	    	newLaser = display.newImageRect( mainGroup, modSheet, 6, 14, 50 )	
+	    elseif shipName == "ship3" then
+	    	newLaser = display.newImageRect( mainGroup, modSheet, 7, 14, 60 )	
+	    elseif shipName == "ship4" then
+	    	newLaser = display.newImageRect( mainGroup, modSheet, 8, 14, 40 )	
+	    end
 		physics.addBody( newLaser, "dynamic", { isSensor=true } )
 		newLaser.isBullet = true
 		newLaser.myName = "laser"
@@ -736,7 +730,7 @@ function scene:create( event )
 	bg3.anchorY = 0.5;
 	bg3.x = 0; bg3.y = bg2.y-1400;
 	
-
+    shipName = event.params.shipnum
     --playNameText.myName = "name"
 
 	-- Display lives and score
@@ -778,18 +772,16 @@ function updateTime()
 	-- body
 end
 function createShip()
-	if mod == false then
+	if shipName == "ship5" then
 		ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
-	else
-		if modProfile == "jordan" then
-			ship = display.newImageRect( mainGroup, modSheet, 1, 98, 79 )
-		elseif modProfile == "ted" then
-			ship = display.newImageRect( mainGroup, modSheet, 2, 98, 79 )
-		elseif modProfile == "zia" then
-			ship = display.newImageRect( mainGroup, modSheet, 3, 98, 79 )
-		elseif modProfile == "jtz" then
-			ship = display.newImageRect( mainGroup, modSheet, 4, 98, 79 )
-		end
+	elseif shipName == "ship1" then
+		ship = display.newImageRect( mainGroup, modSheet, 1, 98, 79 )
+	elseif shipName == "ship2" then
+		ship = display.newImageRect( mainGroup, modSheet, 2, 98, 79 )
+	elseif shipName == "ship3" then
+		ship = display.newImageRect( mainGroup, modSheet, 3, 98, 79 )
+	elseif shipName == "ship4" then
+		ship = display.newImageRect( mainGroup, modSheet, 4, 98, 79 )
 	end
 	ship.x = display.contentCenterX
 	ship.y = display.contentHeight - 100
@@ -798,8 +790,7 @@ function createShip()
 
 	ship:addEventListener( "touch", dragShip )
 	playNameText = display.newText( mainGroup, "", ship.x, ship.y + 50, native.systemFont, 26 )
-
-		playNameText.text = composer.getVariable( "playerName" )
+	playNameText.text = composer.getVariable( "playerName" )
 end
 local function move(event)
 	-- move backgrounds to the left by scrollSpeed, default is 8
@@ -883,8 +874,7 @@ function scene:show( event )
 			composer.getVariable( "playerName" ) == "ted" or 
 			composer.getVariable( "playerName" ) == "zia" or 
 			composer.getVariable( "playerName" ) == "jtz") then
-			mod = true
-			powerlevel = 1000
+			powerlevel = 10000
 			powerCount = 1000
 			modProfile = composer.getVariable( "playerName" )
 		end
