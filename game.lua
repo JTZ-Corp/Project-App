@@ -95,6 +95,18 @@ local sheetOptions2 =
             width = 24,
             height = 54
         },
+        {   -- 8) plasma shot
+			x = 86,
+            y = 35,
+            width = 20,
+            height = 18
+        },
+        {   -- 9) plasma button
+			x = 214,
+            y = 179,
+            width = 72,
+            height = 72
+        },
     }
 }
 local spaceshipOptions =
@@ -175,6 +187,19 @@ local spaceshipOptions =
         },
     }
 }
+
+local sheetData = {
+	width = 144,
+	height = 144,
+	numFrames = 8
+}
+local sequenceData = {
+	{ name = "startShot", frames={ 1, 2, 3}, time=120, loopCount=1},
+    { name = "movingShot", frames={3, 4}, time=200, loopCount=0},
+    { name = "endShot", frames={5, 6, 7, 8}, time=500, loopCount=1},
+    { name = "shotMove", start=1, count=6, time=800}
+}
+local mySheet = graphics.newImageSheet ( "plasma.png", sheetData)
 local objectSheet = graphics.newImageSheet( "gameObjects.png", sheetOptions )
 local objectSheet2 = graphics.newImageSheet( "gameObjects2.png", sheetOptions2 )
 local modSheet = graphics.newImageSheet( "modObjects.png", spaceshipOptions )
@@ -188,18 +213,24 @@ local died = false
 local bigAstroid = false
 local hitCount = 0;
 local minuteCount = 1
+local plasmaCount = 2
 local megaShotProfile
 local simpleShotProfile
 local shipName
+local newPlasma = nil
+local plasmaMovingTransition 
+local plasmaButton
 
 local asteroidsTable = {}
 local powerTable = {}
+local power2Table = {}
 local bigAstroidTable = {}
 local modProfile
 
 local ship
 local gameLoopTimer
 local gameLoop2Timer
+local gameLoop3Timer
 local fireLoopTimer
 local gameClockTimer
 local livesText
@@ -209,6 +240,8 @@ local powerText
 local hitText
 local gameTime
 local startTime
+local plasmaAnimation
+local plasmaText
 
 local backGroup
 local mainGroup
@@ -220,6 +253,7 @@ local mute = false
 
 -- Sound effects
 local explosionSound
+local bigexplosionSound
 local fireSound
 local musicTrack
 local levelupSound
@@ -305,11 +339,11 @@ local function createBigAsteroid()
 	audio.play( bossTrack, { channel=2, loops=-1 } )
 	local newBig = display.newImageRect( mainGroup, objectSheet2, 5, 600, 600 )
 	table.insert( bigAstroidTable, newBig )	
-	physics.addBody( newBig, "dynamic", { radius=300, bounce=0.8 } )	
+	physics.addBody( newBig, "dynamic", { radius=270, bounce=0.8 } )	
 	newBig.myName = "big"
 
 	-- From the top
-	newBig.x = display.contentCenterX + 10
+	newBig.x = display.contentCenterX + 12
 	newBig.y = -120
 	newBig:setLinearVelocity( 0, 40)
 	newBig:applyTorque( math.random( -4,4 ) )
@@ -323,6 +357,35 @@ local function createPower()
 	table.insert( powerTable, newPower )	
 	physics.addBody( newPower, "dynamic", { radius=10, bounce=0.8 } )	
 	newPower.myName = "power"
+
+
+	if ( whereFrom == 1 ) then
+		-- From the left
+		newPower.x = -60
+		newPower.y = math.random( 500 )
+		newPower:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
+	elseif ( whereFrom == 2 ) then
+		-- From the top
+		newPower.x = math.random( display.contentWidth )
+		newPower.y = -60
+		newPower:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
+	elseif ( whereFrom == 3 ) then
+		-- From the right
+		newPower.x = display.contentWidth + 60
+		newPower.y = math.random( 500 )
+		newPower:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+	end
+
+	--newPower:applyTorque( math.random( -6,6 ) )
+end
+
+local function createPower2()
+
+	local whereFrom = math.random( 3 )
+	local newPower = display.newImageRect( mainGroup, objectSheet2, 8, 40, 40 )
+	table.insert( power2Table, newPower )	
+	physics.addBody( newPower, "dynamic", { radius=10, bounce=0.8 } )	
+	newPower.myName = "power2"
 
 
 	if ( whereFrom == 1 ) then
@@ -405,6 +468,49 @@ local function fireLaser()
 	end
 end
 
+local function firePlasma()
+
+ 	-- Play fire sound!
+
+ 	if plasmaCount >= 1 and newPlasma == nil then
+
+		plasmaCount = plasmaCount - 1
+	 	plasmaText.text = "SS: " .. tostring(plasmaCount )
+	    audio.play( fireSound )
+	    newPlasma = display.newSprite( mySheet, sequenceData)
+		physics.addBody( newPlasma, "dynamic", { isSensor=true} )
+		newPlasma.isBullet = true
+		newPlasma.myName = "plasma"
+		newPlasma.x = ship.x
+		newPlasma.y = ship.y
+		--newPlasma:toBack()
+		newPlasma:setSequence("startShot")
+		newPlasma:play()
+		print("start shot plasma")
+		plasmaMovingTransition = transition.to( newPlasma, { y=-40, time=4000,
+			onStart = function () 
+				newPlasma:setSequence("movingShot") 
+				newPlasma:play() 
+			end,
+			onComplete = function() 
+				print(tostring(newPlasma.y))
+				display.remove( newPlasma )
+				newPlasma:removeSelf()
+				newPlasma = nil 
+				--plasmaOnComplete()
+			end
+		} )
+	end
+end
+
+function plasmaOnComplete()
+	display.remove( newPlasma ) 
+	transition.cancel(plasmaMovingTransition)
+	newPlasma:removeSelf()
+	newPlasma = nil
+	print("end shot plasma")
+	--firePlasma()
+end
 
 local function dragShip( event )
 
@@ -450,6 +556,24 @@ local function gameLoop2()
 		then
 			display.remove( thisPower )
 			table.remove( powerTable, i )
+		end
+	end
+end
+
+local function gameLoop3()
+
+    createPower2()
+
+	for i = #power2Table, 1, -1 do
+		local thisPower = power2Table[i]
+
+		if ( thisPower.x < -100 or
+			 thisPower.x > display.contentWidth + 100 or
+			 thisPower.y < -100 or
+			 thisPower.y > display.contentHeight + 100 )
+		then
+			display.remove( thisPower )
+			table.remove( power2Table, i )
 		end
 	end
 end
@@ -548,7 +672,14 @@ local function onCollision( event )
 			 ( obj1.myName == "laser" and obj2.myName == "big" ) or
 			 ( obj1.myName == "big" and obj2.myName == "laser" ) or
 			 ( obj1.myName == "big" and obj2.myName == "megalaser" ) or 
-			 ( obj1.myName == "megalaser" and obj2.myName == "big" ))
+			 ( obj1.myName == "megalaser" and obj2.myName == "big" ) or
+
+			 ( obj1.myName == "plasma" and obj2.myName == "big" ) or
+			 ( obj1.myName == "big" and obj2.myName == "plasma" ) or
+			 ( obj1.myName == "plasma" and obj2.myName == "megaroid" ) or
+			 ( obj1.myName == "megaroid" and obj2.myName == "plasma" ) or
+			 ( obj1.myName == "plasma" and obj2.myName == "asteroid" ) or 
+			 ( obj1.myName == "asteroid" and obj2.myName == "plasma" ))
 		then
 			-- Check if asteriod is a megaroid
 			local isMegaRoid
@@ -562,10 +693,29 @@ local function onCollision( event )
 				isMegaRoid = false
 			end
 			-- Remove both the laser and asteroid
+			--print(obj1.myName .. "-" .. obj2.myName)
 			if(obj1.myName ~= "big" and obj2.myName ~= "big") then
-				if(obj1.myName == "megalaser") then
+				if(obj1.myName == "megalaser" or obj1.myName == "plasma") then
+					if obj1.myName == "plasma" then
+						newPlasma:setSequence("endShot")
+						newPlasma:play()
+
+						transition.pause(plasmaMovingTransition)
+						timer.performWithDelay( 500, plasmaOnComplete)
+					else
+        				audio.play( explosionSound )
+        			end
 					display.remove( obj2 )
-				elseif(obj2.myName == "megalaser") then
+				elseif(obj2.myName == "megalaser"  or obj2.myName == "plasma") then
+					if obj2.myName == "plasma" then
+						newPlasma:setSequence("endShot")
+						newPlasma:play()
+
+						transition.pause(plasmaMovingTransition)
+						timer.performWithDelay( 500, plasmaOnComplete)
+					else
+        				audio.play( explosionSound )
+        			end
 	            	display.remove( obj1 )
 	            else
 					display.remove( obj1 )
@@ -573,19 +723,42 @@ local function onCollision( event )
 	            end
 	        else
 	        	if hitCount < 190 then 
-		        	if(obj1.myName == "big" and (obj2.myName == "laser" or obj2.myName == "megalaser")) then
-						display.remove( obj2 )
+		        	if(obj1.myName == "big" and (obj2.myName == "laser" or obj2.myName == "megalaser"  or obj2.myName == "plasma")) then
+
 						if(obj2.myName == "laser") then
+            				audio.play( explosionSound )
 							hitCount = hitCount + 1
-						else
+							display.remove( obj2 )
+						elseif(obj2.myName == "megalaser") then
+            				audio.play( explosionSound )
 							hitCount = hitCount + 3
+							display.remove( obj2 )
+						else
+            				audio.play( bigexplosionSound )
+							hitCount = hitCount + 100
+							newPlasma:setSequence("endShot")
+							newPlasma:play()
+
+							transition.pause(plasmaMovingTransition)
+							timer.performWithDelay( 500, plasmaOnComplete)
 						end
-					elseif(obj2.myName == "big" and (obj1.myName == "laser" or obj1.myName == "megalaser")) then
-		            	display.remove( obj1 )
+					elseif(obj2.myName == "big" and (obj1.myName == "laser" or obj1.myName == "megalaser"  or obj1.myName == "plasma")) then
 		            	if(obj1.myName == "laser") then
+            				audio.play( explosionSound )
+		            		display.remove( obj1)
 							hitCount = hitCount + 1
-						else
+						elseif(obj1.myName == "megalaser") then
+            				audio.play( explosionSound )
 							hitCount = hitCount + 3
+							display.remove( obj1 )
+						else
+            				audio.play( bigexplosionSound )
+							hitCount = hitCount + 100
+							newPlasma:setSequence("endShot")
+							newPlasma:play()
+
+							transition.pause(plasmaMovingTransition)
+							timer.performWithDelay( 500, plasmaOnComplete)
 						end
 		            end
 		        else
@@ -604,8 +777,6 @@ local function onCollision( event )
 					audio.play( musicTrack, { channel=1, loops=-1 } )
 	            end
             end
-			-- Play explosion sound!
-            audio.play( explosionSound )
 
 			for i = #asteroidsTable, 1, -1 do
 				if ( asteroidsTable[i] == obj1 or asteroidsTable[i] == obj2 ) then
@@ -667,7 +838,7 @@ local function onCollision( event )
 				end
 			end
 		elseif ( ( obj1.myName == "ship" and obj2.myName == "power" ) or
-				 ( obj1.myName == "power" and obj2.myName == "ship" ))
+				 ( obj1.myName == "power" and obj2.myName == "ship" ) )
 		then
 			if(obj1.myName == "power") then
 				display.remove( obj1 )
@@ -687,7 +858,28 @@ local function onCollision( event )
 			powerCount = powerCount + 100
 			fireRate()
 
-			print(powerCount)
+		elseif (( obj1.myName == "ship" and obj2.myName == "power2" ) or
+				 ( obj1.myName == "power2" and obj2.myName == "ship" ))
+		then
+
+			if(obj1.myName == "power2") then
+				display.remove( obj1 )
+			elseif(obj2.myName == "power2") then
+            	display.remove( obj2 )
+            end
+			 -- Play explosion sound!
+            audio.play( levelupSound )
+
+            for i = #power2Table, 1, -1 do
+				if ( power2Table[i] == obj1 or power2Table[i] == obj2 ) then
+					table.remove( power2Table, i )
+					break
+				end
+			end
+			plasmaCount = plasmaCount + 1
+			print(plasmaCount)
+			plasmaText.text = "SS: " .. plasmaCount
+
 		end
 	end
 end
@@ -746,6 +938,10 @@ function scene:create( event )
 
 	livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 40, native.systemFont, 36 )
 	scoreText = display.newText( uiGroup, "Score: " .. score, 400, 40, native.systemFont, 36 )
+	plasmaText = display.newText( uiGroup, "SS: " .. plasmaCount, 170, 75, native.systemFont, 20 )
+	plasmaButton = display.newImageRect( mainGroup, objectSheet2, 9, 60, 60)
+	plasmaButton.x = display.contentCenterX + 190
+	plasmaButton.y = display.contentHeight - 100
 	--powerText = display.newText( uiGroup, "Power: " .. powerlevel, 200, 80, native.systemFont, 26 )
 	--hitText = display.newText( uiGroup, "Hits: " .. hitCount, 400, 80, native.systemFont, 26 )
 
@@ -754,6 +950,7 @@ function scene:create( event )
  	musicTrack = audio.loadSound( "audio/80s-Space-Game_Looping.wav")
 	explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
+	bigexplosionSound = audio.loadSound( "audio/bigexplosion.wav" )
 	levelupSound = audio.loadSound( "audio/levelup.wav" )
 	bossTrack = audio.loadSound( "audio/Escape_Looping.wav" )
 
@@ -769,8 +966,10 @@ function scene:create( event )
  	
  	volume:addEventListener("tap", changeMute)
  	volumeLow:addEventListener("tap", changeMute)
+ 	plasmaButton:addEventListener("tap", firePlasma)
 end
  
+
 function updateTime()
 	gameTime = os.date( '*t' )
 	--print(startTime.sec - gameTime.sec)
@@ -874,11 +1073,12 @@ function scene:show( event )
 		physics.start()
 		Runtime:addEventListener( "collision", onCollision )
 		Runtime:addEventListener( "enterFrame", move )
+		Runtime:addEventListener("unhandledError", myUnhandledErrorListener)
 		gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 		gameLoop2Timer = timer.performWithDelay( 10000, gameLoop2, 0 )
+		gameLoop3Timer = timer.performWithDelay( 30000, gameLoop3, 0 )
 		gameClockTimer = timer.performWithDelay( 1000, updateTime, 0)
 		startTime = os.date( '*t' )
-		fireRate()
 		--Add mode for developers
 		if(composer.getVariable( "playerName" ) == "jordan" or 
 			composer.getVariable( "playerName" ) == "ted" or 
@@ -891,6 +1091,8 @@ function scene:show( event )
 		        -- Start the music!
         audio.play( musicTrack, { channel=1, loops=-1 } )
         createShip()
+        fireRate()
+        --firePlasma()
 	end
 end
 
@@ -905,6 +1107,7 @@ function scene:hide( event )
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )
 		timer.cancel( gameLoop2Timer )
+		timer.cancel( gameLoop3Timer )
 		--timer.cancel( gameClockTimer )
 
 	elseif ( phase == "did" ) then
@@ -925,12 +1128,26 @@ function scene:destroy( event )
 	-- Code here runs prior to the removal of scene's view
     -- Dispose audio!
     audio.dispose( explosionSound )
+    audio.dispose( bigexplosionSound )
     audio.dispose( fireSound )
     audio.dispose( musicTrack )
     audio.dispose( levelupSound )
     audio.dispose( bossTrack )
 end
 
+function myUnhandledErrorListener( event )
+ 
+    local iHandledTheError = true
+ 
+    if iHandledTheError then
+        local alert = native.showAlert( "Error", event.errorMessage, { "OK"})
+    else
+        print( "Not handling the unhandled error", event.errorMessage )
+    end
+    
+    return iHandledTheError
+end
+ 
 
 -- -----------------------------------------------------------------------------------
 -- Scene event function listeners
