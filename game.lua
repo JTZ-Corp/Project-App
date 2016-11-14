@@ -700,6 +700,7 @@ local function onCollision( event )
 						newPlasma:setSequence("endShot")
 						newPlasma:play()
 
+            				audio.play( bigexplosionSound )
 						transition.pause(plasmaMovingTransition)
 						timer.performWithDelay( 500, plasmaOnComplete)
 					else
@@ -711,6 +712,7 @@ local function onCollision( event )
 						newPlasma:setSequence("endShot")
 						newPlasma:play()
 
+            				audio.play( bigexplosionSound )
 						transition.pause(plasmaMovingTransition)
 						timer.performWithDelay( 500, plasmaOnComplete)
 					else
